@@ -187,7 +187,7 @@ rui_init(mu_Context *ctx)
 static uint8_t *
 handle_events(mu_Context *ctx, uint8_t *p)
 {
-	static int16_t x, y;
+	static int16_t mx, my;
 
 	UNMARSHALL_BEGIN;
 
@@ -197,12 +197,14 @@ handle_events(mu_Context *ctx, uint8_t *p)
 
 	EVWIRE_MOTION(x, y);
 	mu_input_mousemove(ctx, x, y);
+	mx = x;
+	my = y;
 	DONE;
 
 	EVWIRE_DOWN(k);
 	switch (k) {
 	case K_MOUSELEFT:
-		mu_input_mousedown(ctx, x, y, MU_MOUSE_LEFT);
+		mu_input_mousedown(ctx, mx, my, MU_MOUSE_LEFT);
 		break;
 	}
 	DONE;
@@ -210,7 +212,7 @@ handle_events(mu_Context *ctx, uint8_t *p)
 	EVWIRE_UP(k);
 	switch (k) {
 	case K_MOUSELEFT:
-		mu_input_mouseup(ctx, x, y, MU_MOUSE_LEFT);
+		mu_input_mouseup(ctx, mx, my, MU_MOUSE_LEFT);
 		break;
 	}
 	DONE;
