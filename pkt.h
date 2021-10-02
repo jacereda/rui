@@ -71,7 +71,7 @@ pkt_recv(uint8_t *p, size_t s)
 	socklen_t sinlen = sizeof(g_sin);
 #if 0 // defined __linux__
 	ssize_t rs = recvfrom(
-	    g_sock, p, s, MSG_WAITALL, (struct sockaddr *)&g_sin, &sinlen);
+	    g_sock, p, s, 0, (struct sockaddr *)&g_sin, &sinlen);
 	if (rs < 0)
 		perror("recvfrom");
 	//	printf("r %zu from %x\n", rs, g_sin.sin_addr.s_addr);
