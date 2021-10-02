@@ -11,9 +11,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-static uint8_t	g_buf[65507];
-static unsigned g_curr;
-
 enum keys {
 #define K(x) K_##x,
 #include "glcv/src/cvkeys.h"
@@ -24,6 +21,9 @@ struct sockaddr_in g_sin;
 
 #include "msg.h"
 
+static uint8_t	g_buf[40 * MTU];
+static unsigned g_curr;
+
 #include "marshall.h"
 #include "renderwire.h"
 
@@ -32,7 +32,7 @@ static uint8_t *handle_events(mu_Context *ctx, uint8_t *p);
 static void
 push_quad(mu_Rect d, mu_Rect s, mu_Color c)
 {
-	WIRE_RECT(c.r, c.g, c.b, c.a, s.x, s.y, s.w, s.h, d.x, d.y, d.w, d.h);
+	RWIRE_RECT(c.r, c.g, c.b, c.a, s.x, s.y, s.w, s.h, d.x, d.y, d.w, d.h);
 	DONE;
 }
 
@@ -96,7 +96,7 @@ get_text_height(mu_Font font)
 static void
 send_packet()
 {
-	WIRE_END();
+	RWIRE_END();
 	DONE;
 	assert(g_curr < sizeof(g_buf));
 	msgsend(g_buf, sizeof(g_buf));
@@ -112,9 +112,9 @@ umin(unsigned a, unsigned b)
 static void
 set_clip_rect(mu_Rect r)
 {
-	WIRE_FLUSH();
+	RWIRE_FLUSH();
 	DONE;
-	WIRE_CLIP(r.x, r.y, umin(0xffff, r.w), umin(0xffff, r.h));
+	RWIRE_CLIP(r.x, r.y, umin(0xffff, r.w), umin(0xffff, r.h));
 	DONE;
 }
 
@@ -122,7 +122,7 @@ int
 rui_process(mu_Context *ctx)
 {
 	mu_Command *cmd = NULL;
-	WIRE_BEGIN();
+	RWIRE_BEGIN();
 	DONE;
 	while (mu_next_command(ctx, &cmd)) {
 		switch (cmd->type) {
@@ -142,10 +142,10 @@ rui_process(mu_Context *ctx)
 			break;
 		}
 	}
-	WIRE_FLUSH();
+	RWIRE_FLUSH();
 	DONE;
 	send_packet();
-	uint8_t buf[1500];
+	uint8_t buf[MTU];
 	msgrecv(buf, sizeof(buf));
 	uint8_t *pend = handle_events(ctx, buf);
 	return pend != 0;
@@ -154,7 +154,7 @@ rui_process(mu_Context *ctx)
 void
 rui_clear(mu_Color c)
 {
-	WIRE_CLEAR(c.r, c.g, c.b, c.a);
+	RWIRE_CLEAR(c.r, c.g, c.b, c.a);
 	DONE;
 }
 
@@ -176,7 +176,7 @@ rui_init(mu_Context *ctx)
 	ctx->text_width = get_text_width;
 	ctx->text_height = get_text_height;
 
-	WIRE_ATLAS(atlas_texture, ATLAS_WIDTH, ATLAS_HEIGHT);
+	RWIRE_ATLAS(atlas_texture, ATLAS_WIDTH, ATLAS_HEIGHT);
 	DONE;
 	send_packet();
 }

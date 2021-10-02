@@ -9,7 +9,6 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-
 static int	   g_sock;
 static GLuint	   texbo;
 static GLuint	   vertbo;
@@ -17,12 +16,10 @@ static GLuint	   colbo;
 static GLuint	   indbo;
 static GLuint	   trans;
 static GLuint	   g_sca;
-static uint8_t	   g_buf[1500];
 static unsigned	   g_curr;
 struct sockaddr_in g_sin;
 
 #include "msg.h"
-
 
 static void
 report(const char *name, const char *s)
@@ -159,6 +156,7 @@ glinit()
 
 #include "marshall.h"
 #include "eventwire.h"
+static uint8_t g_buf[EVWIRE_SZ];
 
 static void
 up(cvkey k)
@@ -223,15 +221,15 @@ handle(uint8_t *p)
 	unsigned bi = 0;
 	UNMARSHALL_BEGIN;
 
-	WIRE_END();
+	RWIRE_END();
 	return p;
 	DONE;
 
-	WIRE_BEGIN();
+	RWIRE_BEGIN();
 	glViewport(0, 0, cvWidth(), cvHeight());
 	DONE;
 
-	WIRE_FLUSH();
+	RWIRE_FLUSH();
 	// clang-format off
 	GLfloat t[] = {
 	  2. / cvWidth(), 0, 0, 0,
@@ -256,15 +254,16 @@ handle(uint8_t *p)
 	glDrawElements(GL_TRIANGLES, bi * 6, GL_UNSIGNED_INT, 0);
 	bi = 0;
 	assert(glGetError() == 0);
+	glFlush();
 	DONE;
 
-	WIRE_ATLAS(bytes, sw, sh);
+	RWIRE_ATLAS(bytes, sw, sh);
 	glUniform2f(g_sca, 1.f / sw, 1.f / sh);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, sw, sh, 0, GL_RED,
 	    GL_UNSIGNED_BYTE, bytes);
 	DONE;
 
-	WIRE_RECT(r, g, b, a, sx, sy, sw, sh, dx, dy, dw, dh);
+	RWIRE_RECT(r, g, b, a, sx, sy, sw, sh, dx, dy, dw, dh);
 	unsigned vi = bi * 8;
 	unsigned ci = bi * 16;
 	unsigned ei = bi * 4;
@@ -300,12 +299,12 @@ handle(uint8_t *p)
 	}
 	DONE;
 
-	WIRE_CLEAR(r, g, b, a);
+	RWIRE_CLEAR(r, g, b, a);
 	glClearColor(r / 255., g / 255., b / 255., a / 255.);
 	glClear(GL_COLOR_BUFFER_BIT);
 	DONE;
 
-	WIRE_CLIP(sx, sy, sw, sh);
+	RWIRE_CLIP(sx, sy, sw, sh);
 	glScissor(sx, cvHeight() - (sy + sh), sw, sh);
 	DONE;
 
@@ -323,7 +322,7 @@ send_events()
 static void
 update()
 {
-	uint8_t	  buf[65507];
+	uint8_t buf[RWIRE_SZ];
 	msgrecv(buf, sizeof(buf));
 	handle(buf);
 }
