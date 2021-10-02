@@ -249,6 +249,7 @@ render(uint8_t *p)
 
 	RWIRE_BEGIN();
 	glViewport(0, 0, cvWidth(), cvHeight());
+	glScissor(0, 0, 0xffff, 0xffff);
 	DONE;
 
 	RWIRE_FLUSH();
