@@ -6,28 +6,20 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
 
 enum keys {
 #define K(x) K_##x,
 #include "glcv/src/cvkeys.h"
 };
 
-static int	   g_sock;
-struct sockaddr_in g_sin;
-
-#include "msg.h"
-
-static uint8_t	g_buf[40 * MTU];
-static unsigned g_curr;
+#include "pkt.h"
 
 #include "marshall.h"
 #include "renderwire.h"
+static uint8_t	g_buf[RWIRE_SZ];
+static unsigned g_curr;
 
-static uint8_t *handle_events(mu_Context *ctx, uint8_t *p);
+static int handle_events(mu_Context *ctx);
 
 static void
 push_quad(mu_Rect d, mu_Rect s, mu_Color c)
@@ -99,7 +91,7 @@ send_packet()
 	RWIRE_END();
 	DONE;
 	assert(g_curr < sizeof(g_buf));
-	msgsend(g_buf, sizeof(g_buf));
+	pkt_send(g_buf, sizeof(g_buf));
 	g_curr = 0;
 }
 
@@ -145,10 +137,7 @@ rui_process(mu_Context *ctx)
 	RWIRE_FLUSH();
 	DONE;
 	send_packet();
-	uint8_t buf[MTU];
-	msgrecv(buf, sizeof(buf));
-	uint8_t *pend = handle_events(ctx, buf);
-	return pend != 0;
+	return handle_events(ctx);
 }
 
 void
@@ -161,38 +150,37 @@ rui_clear(mu_Color c)
 void
 rui_init(mu_Context *ctx)
 {
-	const char *	hn = getenv("RUIHOST");
-	struct hostent *he = gethostbyname(hn ? hn : "localhost");
-
-	if ((g_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-		perror("sock");
-
-	memset(&g_sin, 0, sizeof(g_sin));
-	g_sin.sin_family = AF_INET;
-	g_sin.sin_addr.s_addr = *(in_addr_t *)he->h_addr_list[0];
-	g_sin.sin_port = htons(50042);
-
 	mu_init(ctx);
 	ctx->text_width = get_text_width;
 	ctx->text_height = get_text_height;
 
+	pkt_init_client();
+
+	RWIRE_CONFIG(100, 100, 512, 512);
+	DONE;
+	send_packet();
+	handle_events(0);
+
 	RWIRE_ATLAS(atlas_texture, ATLAS_WIDTH, ATLAS_HEIGHT);
 	DONE;
 	send_packet();
+	handle_events(0);
 }
 
 #include "unmarshall.h"
 #include "eventwire.h"
 
-static uint8_t *
-handle_events(mu_Context *ctx, uint8_t *p)
+static int
+handle_events(mu_Context *ctx)
 {
 	static int16_t mx, my;
-
+	uint8_t	       buf[EVWIRE_SZ];
+	uint8_t *      p = buf;
+	pkt_recv(buf, sizeof(buf));
 	UNMARSHALL_BEGIN;
 
 	EVWIRE_END();
-	return p;
+	return 1;
 	DONE;
 
 	EVWIRE_MOTION(x, y);
@@ -224,5 +212,6 @@ handle_events(mu_Context *ctx, uint8_t *p)
 	EVWIRE_QUIT();
 	return 0;
 	DONE;
+
 	UNMARSHALL_END;
 }

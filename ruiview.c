@@ -5,21 +5,24 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <stdlib.h>
 
-static int	   g_sock;
-static GLuint	   texbo;
-static GLuint	   vertbo;
-static GLuint	   colbo;
-static GLuint	   indbo;
-static GLuint	   trans;
-static GLuint	   g_sca;
-static unsigned	   g_curr;
-struct sockaddr_in g_sin;
+static GLuint	texbo;
+static GLuint	vertbo;
+static GLuint	colbo;
+static GLuint	indbo;
+static GLuint	trans;
+static GLuint	g_sca;
+static unsigned g_curr;
+static int	g_x;
+static int	g_y;
+static int	g_w;
+static int	g_h;
 
-#include "msg.h"
+#include "pkt.h"
+
+static void config();
+static void send_events();
 
 static void
 report(const char *name, const char *s)
@@ -30,13 +33,9 @@ report(const char *name, const char *s)
 static void
 init()
 {
-	struct sockaddr_in sin;
-	g_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = INADDR_ANY;
-	sin.sin_port = htons(50042);
-	bind(g_sock, (const struct sockaddr *)&sin, sizeof(sin));
+	pkt_init_server();
+	config();
+	send_events();
 }
 
 static void
@@ -152,6 +151,10 @@ glinit()
 
 	trans = glGetUniformLocation(sh, "trans");
 	assert(glGetError() == 0);
+
+	/* cvReport("%d %d", cvWidth(), cvHeight()); */
+	/* glViewport(0, 0, cvWidth(), cvHeight()); */
+	/* glClear(GL_COLOR_BUFFER_BIT); */
 }
 
 #include "marshall.h"
@@ -210,8 +213,31 @@ evend()
 #include "unmarshall.h"
 #include "renderwire.h"
 
+static void
+config()
+{
+	uint8_t	 buf[RWIRE_SZ];
+	uint8_t *p = buf;
+	pkt_recv(buf, sizeof(buf));
+
+	UNMARSHALL_BEGIN;
+
+	RWIRE_CONFIG(x, y, w, h);
+	g_x = x;
+	g_y = y;
+	g_w = w;
+	g_h = h;
+	DONE;
+
+	RWIRE_END();
+	return;
+	DONE;
+
+	UNMARSHALL_END;
+}
+
 static uint8_t *
-handle(uint8_t *p)
+render(uint8_t *p)
 {
 #define BUFFER_SIZE 16384
 	GLfloat	 uv[BUFFER_SIZE * 8];
@@ -220,10 +246,6 @@ handle(uint8_t *p)
 	GLuint	 ind[BUFFER_SIZE * 6];
 	unsigned bi = 0;
 	UNMARSHALL_BEGIN;
-
-	RWIRE_END();
-	return p;
-	DONE;
 
 	RWIRE_BEGIN();
 	glViewport(0, 0, cvWidth(), cvHeight());
@@ -254,7 +276,6 @@ handle(uint8_t *p)
 	glDrawElements(GL_TRIANGLES, bi * 6, GL_UNSIGNED_INT, 0);
 	bi = 0;
 	assert(glGetError() == 0);
-	glFlush();
 	DONE;
 
 	RWIRE_ATLAS(bytes, sw, sh);
@@ -308,6 +329,10 @@ handle(uint8_t *p)
 	glScissor(sx, cvHeight() - (sy + sh), sw, sh);
 	DONE;
 
+	RWIRE_END();
+	return p;
+	DONE;
+
 	UNMARSHALL_END;
 }
 
@@ -315,7 +340,7 @@ static void
 send_events()
 {
 	evend();
-	msgsend(g_buf, sizeof(g_buf));
+	pkt_send(g_buf, sizeof(g_buf));
 	g_curr = 0;
 }
 
@@ -323,8 +348,8 @@ static void
 update()
 {
 	uint8_t buf[RWIRE_SZ];
-	msgrecv(buf, sizeof(buf));
-	handle(buf);
+	pkt_recv(buf, sizeof(buf));
+	render(buf);
 }
 
 intptr_t
@@ -332,6 +357,7 @@ event(const ev *e)
 {
 	intptr_t    ret = 1;
 	cveventtype t = evType(e);
+	//	cvReport("%s %zu %zu", evName(e), evArg0(e), evArg1(e));
 	switch (t) {
 	case CVQ_LOGGER:
 		ret = (intptr_t)report;
@@ -340,16 +366,16 @@ event(const ev *e)
 		ret = (intptr_t) "ruiview";
 		break;
 	case CVQ_XPOS:
-		ret = 100;
+		ret = g_x;
 		break;
 	case CVQ_YPOS:
-		ret = 100;
+		ret = g_y;
 		break;
 	case CVQ_WIDTH:
-		ret = 512;
+		ret = g_w;
 		break;
 	case CVQ_HEIGHT:
-		ret = 512;
+		ret = g_h;
 		break;
 	case CVE_QUIT:
 		quit();

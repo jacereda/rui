@@ -1,7 +1,11 @@
 #define UNMARSHALL_BEGIN \
 	while (1)        \
 		switch (*p++) {
-#define UNMARSHALL_END }
+#define UNMARSHALL_END                           \
+	default:                                 \
+		printf("unhandled %d\n", p[-1]); \
+		assert(0);                       \
+		}
 #undef U8
 #define U8(x) uint8_t x = *p++;
 #undef U16
