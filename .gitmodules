@@ -1,0 +1,6 @@
+[submodule "glcv"]
+	path = glcv
+	url = git@github.com:jacereda/glcv
+[submodule "microui"]
+	path = microui
+	url = git@github.com:rxi/microui.git
