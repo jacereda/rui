@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+killall demo || echo "no demo"
+killall ruiview || echo "no ruiview"
+install -d b
+cc -Wno-deprecated-declarations -fobjc-arc -Wall -Os -I glcv/src glcv/src/cocoaarc.m ruiview.c -o b/ruiview -framework OpenGL -framework AppKit
+b/ruiview &
+cc -Wall -Os -I microui/src -I microui/demo demo.c rui.c microui/src/microui.c -o b/demo
+b/demo

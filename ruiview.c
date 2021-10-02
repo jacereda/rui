@@ -9,16 +9,20 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-static int	   sock;
+
+static int	   g_sock;
 static GLuint	   texbo;
 static GLuint	   vertbo;
 static GLuint	   colbo;
 static GLuint	   indbo;
 static GLuint	   trans;
 static GLuint	   g_sca;
-static uint8_t	   g_buf[65507];
+static uint8_t	   g_buf[1500];
 static unsigned	   g_curr;
 struct sockaddr_in g_sin;
+
+#include "msg.h"
+
 
 static void
 report(const char *name, const char *s)
@@ -30,12 +34,12 @@ static void
 init()
 {
 	struct sockaddr_in sin;
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	g_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	memset(&sin, 0, sizeof(sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons(50042);
-	bind(sock, (const struct sockaddr *)&sin, sizeof(sin));
+	bind(g_sock, (const struct sockaddr *)&sin, sizeof(sin));
 }
 
 static void
@@ -312,9 +316,7 @@ static void
 send_events()
 {
 	evend();
-	if (sendto(sock, g_buf, g_curr, 0, (const struct sockaddr *)&g_sin,
-		sizeof(g_sin)) < 0)
-		perror("sendto");
+	msgsend(g_buf, sizeof(g_buf));
 	g_curr = 0;
 }
 
@@ -322,13 +324,8 @@ static void
 update()
 {
 	uint8_t	  buf[65507];
-	socklen_t sinlen = sizeof(g_sin);
-	ssize_t	  sz = recvfrom(sock, buf, sizeof(buf), MSG_WAITALL,
-	      (struct sockaddr *)&g_sin, &sinlen);
-	if (sz < 0)
-		perror("recvfrom");
-	uint8_t *pend = handle(buf);
-	assert(pend == buf + sz);
+	msgrecv(buf, sizeof(buf));
+	handle(buf);
 }
 
 intptr_t

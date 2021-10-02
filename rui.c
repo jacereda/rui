@@ -1,3 +1,6 @@
+#include "microui/src/microui.h"
+#include "microui/demo/atlas.inl"
+
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
@@ -7,8 +10,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include "microui/src/microui.h"
-#include "microui/demo/atlas.inl"
 
 static uint8_t	g_buf[65507];
 static unsigned g_curr;
@@ -20,6 +21,8 @@ enum keys {
 
 static int	   g_sock;
 struct sockaddr_in g_sin;
+
+#include "msg.h"
 
 #include "marshall.h"
 #include "renderwire.h"
@@ -96,9 +99,7 @@ send_packet()
 	WIRE_END();
 	DONE;
 	assert(g_curr < sizeof(g_buf));
-	if (sendto(g_sock, g_buf, g_curr, 0, (const struct sockaddr *)&g_sin,
-		sizeof(g_sin)) < 0)
-		perror("sendto");
+	msgsend(g_buf, sizeof(g_buf));
 	g_curr = 0;
 }
 
@@ -144,14 +145,9 @@ rui_process(mu_Context *ctx)
 	WIRE_FLUSH();
 	DONE;
 	send_packet();
-
-	socklen_t sinlen;
-	ssize_t	  sz = recvfrom(g_sock, g_buf, sizeof(g_buf), MSG_WAITALL,
-	      (struct sockaddr *)&g_sin, &sinlen);
-	if (sz < 0)
-		perror("recvfrom");
-	uint8_t *pend = handle_events(ctx, g_buf);
-	assert(!pend || pend == g_buf + sz);
+	uint8_t buf[1500];
+	msgrecv(buf, sizeof(buf));
+	uint8_t *pend = handle_events(ctx, buf);
 	return pend != 0;
 }
 
