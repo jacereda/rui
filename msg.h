@@ -22,7 +22,6 @@ msgsend(const uint8_t *p, size_t s)
 		if (ss < 0)
 			perror("sendto");
 		sofar += ss;
-		printf("s %zu/%zu\n", sofar, s);
 	}
 }
 
@@ -42,6 +41,5 @@ msgrecv(uint8_t *p, size_t s)
 		if (rs < 0)
 			perror("recvfrom");
 		sofar += rs;
-		printf("r %zu/%zu\n", sofar, s);
 	}
 }
