@@ -6,17 +6,16 @@
 #include <string.h>
 #include <stdlib.h>
 
-static GLuint	texbo;
-static GLuint	vertbo;
-static GLuint	colbo;
-static GLuint	indbo;
-static GLuint	trans;
-static GLuint	g_sca;
-static unsigned g_curr;
-static int	g_x;
-static int	g_y;
-static int	g_w;
-static int	g_h;
+static GLuint g_texbo;
+static GLuint g_vertbo;
+static GLuint g_colbo;
+static GLuint g_indbo;
+static GLuint g_trans;
+static GLuint g_sca;
+static int    g_x;
+static int    g_y;
+static int    g_w;
+static int    g_h;
 
 #include "pkt.h"
 
@@ -130,25 +129,25 @@ glinit()
 	GLint rgba = glGetAttribLocation(sh, "argba");
 	assert(rgba >= 0);
 
-	glGenBuffers(1, &vertbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vertbo);
+	glGenBuffers(1, &g_vertbo);
+	glBindBuffer(GL_ARRAY_BUFFER, g_vertbo);
 	glVertexAttribPointer(xy, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(xy);
 
-	glGenBuffers(1, &texbo);
-	glBindBuffer(GL_ARRAY_BUFFER, texbo);
+	glGenBuffers(1, &g_texbo);
+	glBindBuffer(GL_ARRAY_BUFFER, g_texbo);
 	glVertexAttribPointer(uv, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(uv);
 
-	glGenBuffers(1, &colbo);
-	glBindBuffer(GL_ARRAY_BUFFER, colbo);
+	glGenBuffers(1, &g_colbo);
+	glBindBuffer(GL_ARRAY_BUFFER, g_colbo);
 	glVertexAttribPointer(rgba, 4, GL_UNSIGNED_BYTE, GL_TRUE, 0, 0);
 	glEnableVertexAttribArray(rgba);
 
-	glGenBuffers(1, &indbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indbo);
+	glGenBuffers(1, &g_indbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_indbo);
 
-	trans = glGetUniformLocation(sh, "trans");
+	g_trans = glGetUniformLocation(sh, "trans");
 	assert(glGetError() == 0);
 
 	/* cvReport("%d %d", cvWidth(), cvHeight()); */
@@ -158,7 +157,8 @@ glinit()
 
 #include "marshall.h"
 #include "eventwire.h"
-static uint8_t g_buf[EVWIRE_SZ];
+static uint8_t	g_buf[EVWIRE_SZ];
+static unsigned g_curr;
 
 static void
 up(cvkey k)
@@ -261,17 +261,17 @@ update()
 	  -1, 1, 1, 1,
 	};
 	// clang-format on
-	glUniformMatrix4fv(trans, 1, GL_FALSE, t);
-	glBindBuffer(GL_ARRAY_BUFFER, vertbo);
+	glUniformMatrix4fv(g_trans, 1, GL_FALSE, t);
+	glBindBuffer(GL_ARRAY_BUFFER, g_vertbo);
 	glBufferData(
 	    GL_ARRAY_BUFFER, bi * 8 * sizeof(xy[0]), xy, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, texbo);
+	glBindBuffer(GL_ARRAY_BUFFER, g_texbo);
 	glBufferData(
 	    GL_ARRAY_BUFFER, bi * 8 * sizeof(uv[0]), uv, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, colbo);
+	glBindBuffer(GL_ARRAY_BUFFER, g_colbo);
 	glBufferData(
 	    GL_ARRAY_BUFFER, bi * 16 * sizeof(rgba[0]), rgba, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_indbo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, bi * 6 * sizeof(ind[0]), ind,
 	    GL_DYNAMIC_DRAW);
 	glDrawElements(GL_TRIANGLES, bi * 6, GL_UNSIGNED_INT, 0);
