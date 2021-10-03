@@ -216,11 +216,10 @@ evend()
 static void
 config()
 {
-	uint8_t	 buf[RWIRE_SZ];
-	uint8_t *p = buf;
+	uint8_t buf[RWIRE_SZ];
 	pkt_recv(buf, sizeof(buf));
 
-	UNMARSHALL_BEGIN;
+	UNMARSHALL_BEGIN(buf);
 
 	RWIRE_CONFIG(x, y, w, h);
 	g_x = x;
@@ -236,16 +235,18 @@ config()
 	UNMARSHALL_END;
 }
 
-static uint8_t *
-render(uint8_t *p)
+static void
+update()
 {
+	uint8_t buf[RWIRE_SZ];
+	pkt_recv(buf, sizeof(buf));
 #define BUFFER_SIZE 16384
 	GLfloat	 uv[BUFFER_SIZE * 8];
 	GLfloat	 xy[BUFFER_SIZE * 8];
 	GLubyte	 rgba[BUFFER_SIZE * 16];
 	GLuint	 ind[BUFFER_SIZE * 6];
 	unsigned bi = 0;
-	UNMARSHALL_BEGIN;
+	UNMARSHALL_BEGIN(buf);
 
 	RWIRE_BEGIN();
 	glViewport(0, 0, cvWidth(), cvHeight());
@@ -331,7 +332,7 @@ render(uint8_t *p)
 	DONE;
 
 	RWIRE_END();
-	return p;
+	return;
 	DONE;
 
 	UNMARSHALL_END;
@@ -343,14 +344,6 @@ send_events()
 	evend();
 	pkt_send(g_buf, sizeof(g_buf));
 	g_curr = 0;
-}
-
-static void
-update()
-{
-	uint8_t buf[RWIRE_SZ];
-	pkt_recv(buf, sizeof(buf));
-	render(buf);
 }
 
 intptr_t

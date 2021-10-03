@@ -175,9 +175,9 @@ handle_events(mu_Context *ctx)
 {
 	static int16_t mx, my;
 	uint8_t	       buf[EVWIRE_SZ];
-	uint8_t *      p = buf;
 	pkt_recv(buf, sizeof(buf));
-	UNMARSHALL_BEGIN;
+
+	UNMARSHALL_BEGIN(buf);
 
 	EVWIRE_END();
 	return 1;
