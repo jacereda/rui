@@ -47,13 +47,6 @@ pkt_init_client()
 static void
 pkt_send(const uint8_t *p, size_t s)
 {
-#if 0 // defined __linux__
-	ssize_t ss = sendto(
-	    g_sock, p, s, 0, (const struct sockaddr *)&g_sin, sizeof(g_sin));
-	if (ss < 0)
-		perror("sendto");
-	return;
-#endif
 	size_t sofar = 0;
 	while (sofar < s) {
 		size_t	bs = szmin(BATCH, s - sofar);
@@ -69,15 +62,7 @@ static void
 pkt_recv(uint8_t *p, size_t s)
 {
 	socklen_t sinlen = sizeof(g_sin);
-#if 0 // defined __linux__
-	ssize_t rs = recvfrom(
-	    g_sock, p, s, 0, (struct sockaddr *)&g_sin, &sinlen);
-	if (rs < 0)
-		perror("recvfrom");
-	//	printf("r %zu from %x\n", rs, g_sin.sin_addr.s_addr);
-	return;
-#endif
-	size_t sofar = 0;
+	size_t	  sofar = 0;
 	while (sofar < s) {
 		size_t	bs = szmin(BATCH, s - sofar);
 		ssize_t rs = recvfrom(g_sock, p + sofar, bs, MSG_WAITALL,
