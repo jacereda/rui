@@ -1,4 +1,3 @@
-#define GL_GLEXT_PROTOTYPES
 #include "glcv/src/cv.h"
 #include "glcv/src/cvgl.h"
 
