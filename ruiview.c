@@ -188,7 +188,7 @@ motion(int x, int y)
 }
 
 static void
-close()
+wclose()
 {
 	cvQuit();
 }
@@ -399,7 +399,7 @@ event(const ev *e)
 		ret = 0;
 		break;
 	case CVE_CLOSE:
-		close();
+		wclose();
 		ret = 0;
 		break;
 	case CVE_UPDATE:
