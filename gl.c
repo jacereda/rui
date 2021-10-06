@@ -49,6 +49,7 @@ GalogenGetProcAddress(const char *name)
 #else
 #define GALOGEN_GLES_LIB "libGLESv1_CM.so"
 #endif
+
 static void *
 GalogenGetProcAddress(const char *name)
 {
@@ -62,9 +63,19 @@ GalogenGetProcAddress(const char *name)
 
 #else
 
-#include <GL/glx.h>
-#define GalogenGetProcAddress(name) \
-	(*glXGetProcAddressARB)((const GLubyte *)name)
+#include <dlfcn.h>
+static void *
+GalogenGetProcAddress(const char *name)
+{
+	static void *lib = NULL;
+	static void *(*glXGetProcAddressARB)() = NULL;
+	if (NULL == lib) {
+		lib = dlopen("libGL.so", RTLD_LAZY);
+		assert(lib);
+		glXGetProcAddressARB = dlsym(lib, "glXGetProcAddressARB");
+	}
+	return glXGetProcAddressARB(name);
+}
 
 #endif
 
