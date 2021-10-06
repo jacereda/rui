@@ -6,7 +6,7 @@ with import <nixpkgs> {};
     in
       stdenv.mkDerivation {
         name = "shell-environment";
-        nativeBuildInputs = with pkgs; [ pkg-config wayland-protocols gdb clang-tools ];
+        nativeBuildInputs = with pkgs; [ pkg-config wayland-protocols gdb clang-tools cosmopolitan ];
         buildInputs = mylibs;
         LIBRARY_PATH=mylibs;
         LD_LIBRARY_PATH=mylibs;
