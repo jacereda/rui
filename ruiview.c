@@ -1,12 +1,11 @@
-#include <stdint.h>
-#include "pkt.h"
-#include "glcv/src/cv.h"
-#include "gl.h"
-
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "pkt.h"
+#include "glcv/src/cv.h"
+#include "gl.h"
 
 static GLuint g_texbo;
 static GLuint g_vertbo;
