@@ -1,5 +1,7 @@
+#include <stdint.h>
+#include "pkt.h"
 #include "glcv/src/cv.h"
-#include "glcv/src/cvgl.h"
+#include "gl.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -16,8 +18,6 @@ static int    g_x;
 static int    g_y;
 static int    g_w;
 static int    g_h;
-
-#include "pkt.h"
 
 static void config();
 static void send_events();
