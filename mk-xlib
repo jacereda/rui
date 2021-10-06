@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
-killall demo || echo "no demo"
-killall ruiview || echo "no ruiview"
+killall demo 2>/dev/null || true
+killall ruiview 2>/dev/null || true
 install -d b
 cc -Wall -Og -g -U_FORTIFY_SOURCE `pkg-config x11 xcursor xrender gl --cflags --libs` -I glcv/src glcv/src/xlib.c ruiview.c gl.c -ldl -o b/ruiview
 b/ruiview &
